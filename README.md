@@ -1,2 +1,7 @@
-# grafana-backup
-Simple tool for massive backup/restore Grafana dashboards and datasources.
+# Backup tool for Gafana
+
+CLI for the simple backup/restore operations on Grafana dashboards and datasources.
+
+**Work in progress.**
+
+
