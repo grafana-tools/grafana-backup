@@ -36,10 +36,6 @@ func main() {
 	var (
 		serverURL, serverKey, tagline, boardName, fileMask string
 		starred, verbose                                   bool
-		boardLinks                                         []client.FoundBoard
-		rawBoard                                           []byte
-		meta                                               client.BoardProperties
-		err                                                error
 	)
 	flag.StringVar(&serverURL, "url", "http://localhost:3000", "URL of Grafana server")
 	flag.StringVar(&serverKey, "key", "", "API key of Grafana server")
@@ -49,12 +45,45 @@ func main() {
 	flag.StringVar(&fileMask, "file", "", "use only listed files (file masks allowed)")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
+	var args = flag.Args()
+	if len(args) == 0 {
+		printUsage()
+		os.Exit(1)
+	}
 	var tags []string
 	if tagline != "" {
 		for _, tag := range strings.Split(tagline, ",") {
 			tags = append(tags, tag)
 		}
 	}
+
+	// TODO parse config here
+
+	switch args[0] {
+	case "backup":
+		doBackup(serverURL, serverKey, starred, boardName, tags, verbose)
+	case "restore":
+		// TBD
+	case "ls", "list":
+		// TBD
+	case "info":
+		// TBD
+	case "config":
+		// TBD
+	default:
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("Unknown command: %s\n\n", args[0]))
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func doBackup(serverURL, serverKey string, starred bool, boardName string, tags []string, verbose bool) {
+	var (
+		boardLinks []client.FoundBoard
+		rawBoard   []byte
+		meta       client.BoardProperties
+		err        error
+	)
 	c := client.New(serverURL, serverKey, &http.Client{Timeout: 6 * time.Minute})
 	if boardLinks, err = c.SearchDashboards(boardName, starred, tags...); err != nil {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
@@ -86,4 +115,18 @@ func main() {
 	}
 Exit:
 	fmt.Println()
+}
+
+func printUsage() {
+	fmt.Println(`Backup tool for Grafana.
+Copyright (C) 2016  Alexander I.Grafov <siberian@laika.name>
+
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under conditions of GNU GPL license v3.
+
+Usage: $ grafana-backup [flags] <command>
+`)
+	flag.PrintDefaults()
+
 }
