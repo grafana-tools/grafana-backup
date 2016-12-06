@@ -19,57 +19,71 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/grafov/autograf/client"
 )
 
+type command struct {
+	grafana   *client.Instance
+	boardName string
+	tags      []string
+	starred   bool
+	filenames string
+}
+
+type option func(*command) error
+
+var (
+	flagServerURL, flagServerKey          string
+	flagTags, flagBoardName, flagFileName string
+	flagTimeout                           time.Duration
+	flagStarred, verbose                  bool
+)
+
+// TODO use first $XDG_CONFIG_HOME then try $XDG_CONFIG_DIRS
+var tryConfigDirs = []string{"~/.config/grafana+", ".grafana+"}
+
 func main() {
-	var (
-		serverURL, serverKey, tagline, boardName, fileMask string
-		starred, verbose                                   bool
-	)
-	flag.StringVar(&serverURL, "url", "http://localhost:3000", "URL of Grafana server")
-	flag.StringVar(&serverKey, "key", "", "API key of Grafana server")
-	flag.StringVar(&tagline, "tag", "", "dashboard should match all these tags")
-	flag.BoolVar(&starred, "starred", false, "only match starred dashboards")
-	flag.StringVar(&boardName, "name", "", "dashboard should match name")
-	flag.StringVar(&fileMask, "file", "", "use only listed files (file masks allowed)")
+	// TODO parse config here
+
 	flag.BoolVar(&verbose, "v", false, "verbose output")
+	// Connection flags for single or two Grafana instances:
+	flag.StringVar(&flagServerURL, "url", "", "URL of Grafana server")
+	flag.StringVar(&flagServerKey, "key", "", "API key of Grafana server")
+	flag.DurationVar(&flagTimeout, "timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
+	// Dashboard matching flags:
+	flag.StringVar(&flagTags, "tag", "", "dashboard should match all these tags")
+	flag.BoolVar(&flagStarred, "starred", false, "only match starred dashboards")
+	flag.StringVar(&flagBoardName, "name", "", "dashboard should match name")
+	flag.StringVar(&flagFileName, "file", "", "use only listed files (file masks allowed)")
 	flag.Parse()
 	var args = flag.Args()
 	if len(args) == 0 {
 		printUsage()
 		os.Exit(1)
 	}
-	var tags []string
-	if tagline != "" {
-		for _, tag := range strings.Split(tagline, ",") {
-			tags = append(tags, tag)
-		}
-	}
-
-	// TODO parse config here
-
 	switch args[0] {
 	case "backup":
-		doBackup(serverURL, serverKey, starred, boardName, tags, verbose)
+		doBackup(serverInstance(), matchDashboard())
 	case "restore":
+		doRestore(serverInstance(), matchDashboard())
 		// TBD
 	case "ls", "list":
 		// TBD
+		// doList(matchDashboard())
 	case "info":
 		// TBD
+		// doInfo(matchDashboard())
 	case "config":
 		// TBD
+		// doConfig()
 	default:
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("Unknown command: %s\n\n", args[0]))
 		printUsage()
@@ -77,44 +91,45 @@ func main() {
 	}
 }
 
-func doBackup(serverURL, serverKey string, starred bool, boardName string, tags []string, verbose bool) {
-	var (
-		boardLinks []client.FoundBoard
-		rawBoard   []byte
-		meta       client.BoardProperties
-		err        error
-	)
-	c := client.New(serverURL, serverKey, &http.Client{Timeout: 6 * time.Minute})
-	if boardLinks, err = c.SearchDashboards(boardName, starred, tags...); err != nil {
-		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
-		os.Exit(1)
+func serverInstance() option {
+	return func(c *command) error {
+		if flagServerURL != "" {
+			return errors.New("you should provide the server URL")
+		}
+		if flagServerKey != "" {
+			return errors.New("you should provide the server API key")
+		}
+		c.grafana = client.New(flagServerURL, flagServerKey, &http.Client{Timeout: flagTimeout})
+		return nil
 	}
-	if verbose {
-		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
-	}
-	var cancel = make(chan os.Signal, 1)
-	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
-	for _, link := range boardLinks {
-		select {
-		case <-cancel:
-			fmt.Fprintf(os.Stderr, "Execution was cancelled.")
-			goto Exit
-		default:
-			if rawBoard, meta, err = c.GetRawDashboard(link.URI); err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
-				continue
-			}
-			if err = ioutil.WriteFile(fmt.Sprintf("%s.json", meta.Slug), rawBoard, os.FileMode(int(0666))); err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
-				continue
-			}
-			if verbose {
-				fmt.Printf("%s.json backuped ok.\n", meta.Slug)
+}
+
+func matchDashboard() option {
+	return func(c *command) error {
+		c.boardName = flagBoardName
+		c.starred = flagStarred
+		if flagTags != "" {
+			for _, tag := range strings.Split(flagTags, ",") {
+				c.tags = append(c.tags, strings.TrimSpace(tag))
 			}
 		}
+		return nil
 	}
-Exit:
-	fmt.Println()
+}
+
+func initCommand(opts ...option) *command {
+	var (
+		cmd = &command{}
+		err error
+	)
+	for _, opt := range opts {
+		if err = opt(cmd); err != nil {
+			fmt.Fprintf(os.Stderr, fmt.Sprintf("Error: %s\n\n", err))
+			printUsage()
+			os.Exit(1)
+		}
+	}
+	return cmd
 }
 
 func printUsage() {
