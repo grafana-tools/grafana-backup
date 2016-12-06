@@ -141,6 +141,9 @@ This is free software, and you are welcome to redistribute it
 under conditions of GNU GPL license v3.
 
 Usage: $ grafana-backup [flags] <command>
+
+Available commands are: backup, restore, list, info, config, help.
+Call 'grafana-backup help <command>' for details about the command.
 `)
 	flag.PrintDefaults()
 
