@@ -40,7 +40,6 @@ var (
 
 	// Dashboard matching flags.
 	flagTags       = *flag.String("tag", "", "dashboard should match all these tags")
-	flagBoardName  = *flag.String("name", "", "dashboard slug should match name")
 	flagBoardTitle = *flag.String("title", "", "dashboard title should match name")
 	flagStarred    = *flag.Bool("starred", false, "only match starred dashboards")
 
@@ -100,11 +99,11 @@ func main() {
 }
 
 type command struct {
-	grafana   *client.Instance
-	boardName string
-	tags      []string
-	starred   bool
-	filenames []string
+	grafana    *client.Instance
+	boardTitle string
+	tags       []string
+	starred    bool
+	filenames  []string
 }
 
 type option func(*command) error
@@ -124,7 +123,7 @@ func serverInstance() option {
 
 func matchDashboard() option {
 	return func(c *command) error {
-		c.boardName = flagBoardName
+		c.boardTitle = flagBoardTitle
 		c.starred = flagStarred
 		if flagTags != "" {
 			for _, tag := range strings.Split(flagTags, ",") {

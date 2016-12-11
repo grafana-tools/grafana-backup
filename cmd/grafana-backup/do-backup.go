@@ -36,7 +36,7 @@ func doBackup(opts ...option) {
 		meta       client.BoardProperties
 		err        error
 	)
-	if boardLinks, err = cmd.grafana.SearchDashboards(cmd.boardName, cmd.starred, cmd.tags...); err != nil {
+	if boardLinks, err = cmd.grafana.SearchDashboards(cmd.boardTitle, cmd.starred, cmd.tags...); err != nil {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
 		os.Exit(1)
 	}
