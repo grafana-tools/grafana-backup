@@ -64,7 +64,6 @@ var tryConfigDirs = []string{"~/.config/grafana+", ".grafana+"}
 func main() {
 	// TODO parse config here
 
-	flag.BoolVar(&verbose, "v", false, "verbose output")
 	// Connection flags for single or two Grafana instances:
 	flag.StringVar(&flagServerURL, "url", "", "URL of Grafana server")
 	flag.StringVar(&flagServerKey, "key", "", "API key of Grafana server")
@@ -73,12 +72,16 @@ func main() {
 	flag.StringVar(&flagTags, "tag", "", "dashboard should match all these tags")
 	flag.BoolVar(&flagStarred, "starred", false, "only match starred dashboards")
 	flag.StringVar(&flagBoardName, "name", "", "dashboard should match name")
+	// Common flags.
+	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
 	var args = flag.Args()
+	// First mandatory argument is command.
 	if len(args) == 0 {
 		printUsage()
 		os.Exit(1)
 	}
+	// Second optional argument is file path.
 	if len(args) > 1 {
 		argPath = args[1]
 	}
