@@ -27,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"path/filepath"
+
 	"github.com/grafov/autograf/client"
 )
 
@@ -35,16 +37,25 @@ type command struct {
 	boardName string
 	tags      []string
 	starred   bool
-	filenames string
+	filenames []string
 }
 
 type option func(*command) error
 
 var (
-	flagServerURL, flagServerKey          string
-	flagTags, flagBoardName, flagFileName string
-	flagTimeout                           time.Duration
-	flagStarred, verbose                  bool
+	// Connection options.n
+	flagServerURL, flagServerKey string
+	flagTimeout                  time.Duration
+
+	// Dashboard matching options.
+	flagTags, flagBoardName string
+	flagStarred             bool
+
+	// File matching options.
+	argPath string
+
+	// Common options.
+	verbose bool
 )
 
 // TODO use first $XDG_CONFIG_HOME then try $XDG_CONFIG_DIRS
@@ -62,19 +73,20 @@ func main() {
 	flag.StringVar(&flagTags, "tag", "", "dashboard should match all these tags")
 	flag.BoolVar(&flagStarred, "starred", false, "only match starred dashboards")
 	flag.StringVar(&flagBoardName, "name", "", "dashboard should match name")
-	flag.StringVar(&flagFileName, "file", "", "use only listed files (file masks allowed)")
 	flag.Parse()
 	var args = flag.Args()
 	if len(args) == 0 {
 		printUsage()
 		os.Exit(1)
 	}
+	if len(args) > 1 {
+		argPath = args[1]
+	}
 	switch args[0] {
 	case "backup":
 		doBackup(serverInstance(), matchDashboard())
 	case "restore":
-		doRestore(serverInstance(), matchDashboard())
-		// TBD
+		doRestore(serverInstance(), matchFilename())
 	case "ls", "list":
 		// TBD
 		// doList(matchDashboard())
@@ -113,6 +125,23 @@ func matchDashboard() option {
 				c.tags = append(c.tags, strings.TrimSpace(tag))
 			}
 		}
+		return nil
+	}
+}
+
+func matchFilename() option {
+	return func(c *command) error {
+		var (
+			files []string
+			err   error
+		)
+		if files, err = filepath.Glob(argPath); err != nil {
+			return err
+		}
+		if len(files) == 0 {
+			return errors.New("there are no files matching selected pattern found")
+		}
+		c.filenames = files
 		return nil
 	}
 }
