@@ -37,7 +37,37 @@ It based on [autograf](https://github.com/grafov/autograf) library for Grafana.
         
         
         
-        
+**Proposed commands, flags and args**
+
+Draft and it is subject for changes.
+
+	# List dashboards.
+	$ grafana-backup -key=xxxx -url=x.y.z -title=match-name -tag=x,y,z ls
+
+	# List datasources.
+	$ grafana-backup -key=xxxx -url=x.y.z ls-ds
+
+	# List users.
+	$ grafana-backup -key=xxxx -url=x.y.z ls-users
+
+	# Do backup for matching dashboards.
+	$ grafana-backup -key=xxxx -url=x.y.z -title=match-name -tag=x,y,z backup path/to
+
+	# Restore objects on a server at url only for boards match tags.
+	$ grafana-backup -key=xxxx -url=x.y.z -tag x,y,z restore path/from
+
+	# List local backups for tags and file mask
+	$ grafana-backup -tag x,y,z -file "backup/*/*" ls-files 
+
+	# Save all flags to config var.
+	$ grafana-backup -key=xxxx -url=x.y.z config-set confname
+
+	# Get flag values for config variable.
+	$ grafana-backup config-get confname
+
+	# Flag applied for backup/restore
+	-objects=auto,dashboards,datasources,users,all
+
         
         
         
