@@ -32,30 +32,25 @@ import (
 	"github.com/grafov/autograf/client"
 )
 
-type command struct {
-	grafana   *client.Instance
-	boardName string
-	tags      []string
-	starred   bool
-	filenames []string
-}
-
-type option func(*command) error
-
 var (
-	// Connection options.n
-	flagServerURL, flagServerKey string
-	flagTimeout                  time.Duration
+	// Connection flags.
+	flagServerURL = *flag.String("url", "", "URL of Grafana server")
+	flagServerKey = *flag.String("key", "", "API key of Grafana server")
+	flagTimeout   = *flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
 
-	// Dashboard matching options.
-	flagTags, flagBoardName string
-	flagStarred             bool
+	// Dashboard matching flags.
+	flagTags      = *flag.String("tag", "", "dashboard should match all these tags")
+	flagBoardName = *flag.String("name", "", "dashboard should match name")
+	flagStarred   = *flag.Bool("starred", false, "only match starred dashboards")
 
-	// File matching options.
-	argPath string
+	// Common flags.
+	matchedObjects = *flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
+	verbose        = *flag.Bool("v", false, "verbose output")
+	force          = *flag.Bool("force", false, "force overwrite of existing objects")
 
-	// Common options.
-	verbose bool
+	// The args after flags.
+	argCommand string
+	argPath    string
 )
 
 // TODO use first $XDG_CONFIG_HOME then try $XDG_CONFIG_DIRS
@@ -64,16 +59,6 @@ var tryConfigDirs = []string{"~/.config/grafana+", ".grafana+"}
 func main() {
 	// TODO parse config here
 
-	// Connection flags for single or two Grafana instances:
-	flag.StringVar(&flagServerURL, "url", "", "URL of Grafana server")
-	flag.StringVar(&flagServerKey, "key", "", "API key of Grafana server")
-	flag.DurationVar(&flagTimeout, "timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
-	// Dashboard matching flags:
-	flag.StringVar(&flagTags, "tag", "", "dashboard should match all these tags")
-	flag.BoolVar(&flagStarred, "starred", false, "only match starred dashboards")
-	flag.StringVar(&flagBoardName, "name", "", "dashboard should match name")
-	// Common flags.
-	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
 	var args = flag.Args()
 	// First mandatory argument is command.
@@ -81,11 +66,12 @@ func main() {
 		printUsage()
 		os.Exit(1)
 	}
+	argCommand = args[0]
 	// Second optional argument is file path.
 	if len(args) > 1 {
 		argPath = args[1]
 	}
-	switch args[0] {
+	switch argCommand {
 	case "backup":
 		doBackup(serverInstance(), matchDashboard())
 	case "restore":
@@ -105,6 +91,16 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+type command struct {
+	grafana   *client.Instance
+	boardName string
+	tags      []string
+	starred   bool
+	filenames []string
+}
+
+type option func(*command) error
 
 func serverInstance() option {
 	return func(c *command) error {
