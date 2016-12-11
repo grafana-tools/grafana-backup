@@ -40,7 +40,7 @@ func doBackup(opts ...option) {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
 		os.Exit(1)
 	}
-	if verbose {
+	if flagVerbose {
 		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
 	}
 	var cancel = make(chan os.Signal, 1)
@@ -59,7 +59,7 @@ func doBackup(opts ...option) {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
 				continue
 			}
-			if verbose {
+			if flagVerbose {
 				fmt.Printf("%s.json backuped ok.\n", meta.Slug)
 			}
 		}

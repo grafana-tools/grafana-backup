@@ -39,14 +39,15 @@ var (
 	flagTimeout   = *flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
 
 	// Dashboard matching flags.
-	flagTags      = *flag.String("tag", "", "dashboard should match all these tags")
-	flagBoardName = *flag.String("name", "", "dashboard should match name")
-	flagStarred   = *flag.Bool("starred", false, "only match starred dashboards")
+	flagTags       = *flag.String("tag", "", "dashboard should match all these tags")
+	flagBoardName  = *flag.String("name", "", "dashboard slug should match name")
+	flagBoardTitle = *flag.String("title", "", "dashboard title should match name")
+	flagStarred    = *flag.Bool("starred", false, "only match starred dashboards")
 
 	// Common flags.
-	matchedObjects = *flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
-	verbose        = *flag.Bool("v", false, "verbose output")
-	force          = *flag.Bool("force", false, "force overwrite of existing objects")
+	flagMatchObjects = *flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
+	flagVerbose      = *flag.Bool("v", false, "verbose output")
+	flagForce        = *flag.Bool("force", false, "force overwrite of existing objects")
 
 	// The args after flags.
 	argCommand string
@@ -60,15 +61,15 @@ func main() {
 	// TODO parse config here
 
 	flag.Parse()
+	if flag.NArg() == 0 {
+		printUsage()
+		os.Exit(2)
+	}
 	var args = flag.Args()
 	// First mandatory argument is command.
-	if len(args) == 0 {
-		printUsage()
-		os.Exit(1)
-	}
 	argCommand = args[0]
 	// Second optional argument is file path.
-	if len(args) > 1 {
+	if flag.NArg() > 1 {
 		argPath = args[1]
 	}
 	switch argCommand {
@@ -76,15 +77,21 @@ func main() {
 		doBackup(serverInstance(), matchDashboard())
 	case "restore":
 		doRestore(serverInstance(), matchFilename())
-	case "ls", "list":
+	case "ls":
 		// TBD
-		// doList(matchDashboard())
-	case "info":
+		// doDashboardList(matchDashboard())
+	case "ls-files":
 		// TBD
-		// doInfo(matchDashboard())
-	case "config":
+	case "ls-ds":
 		// TBD
-		// doConfig()
+	case "ls-users":
+		// TBD
+	case "config-set":
+		// TBD
+		// doConfigSet()
+	case "config-get":
+		// TBD
+		// doConfigGet()
 	default:
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("Unknown command: %s\n\n", args[0]))
 		printUsage()
