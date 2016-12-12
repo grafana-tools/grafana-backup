@@ -27,11 +27,10 @@ import (
 
 func doRestore(opts ...option) {
 	var (
-		cmd      *command
+		cmd      = initCommand(opts...)
 		rawBoard []byte
 		err      error
 	)
-	cmd = initCommand(opts...)
 	for _, filename := range cmd.filenames {
 		if strings.HasSuffix(filename, ".json") {
 			if rawBoard, err = ioutil.ReadFile(filename); err != nil {

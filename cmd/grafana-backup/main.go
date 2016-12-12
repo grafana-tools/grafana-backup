@@ -24,7 +24,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"path/filepath"
@@ -34,24 +36,26 @@ import (
 
 var (
 	// Connection flags.
-	flagServerURL = *flag.String("url", "", "URL of Grafana server")
-	flagServerKey = *flag.String("key", "", "API key of Grafana server")
-	flagTimeout   = *flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
+	flagServerURL = flag.String("url", "", "URL of Grafana server")
+	flagServerKey = flag.String("key", "", "API key of Grafana server")
+	flagTimeout   = flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
 
 	// Dashboard matching flags.
-	flagTags       = *flag.String("tag", "", "dashboard should match all these tags")
-	flagBoardTitle = *flag.String("title", "", "dashboard title should match name")
-	flagStarred    = *flag.Bool("starred", false, "only match starred dashboards")
+	flagTags       = flag.String("tag", "", "dashboard should match all these tags")
+	flagBoardTitle = flag.String("title", "", "dashboard title should match name")
+	flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
 
 	// Common flags.
-	flagMatchObjects = *flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
-	flagVerbose      = *flag.Bool("v", false, "verbose output")
-	flagForce        = *flag.Bool("force", false, "force overwrite of existing objects")
+	flagMatchObjects = flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
+	flagForce        = flag.Bool("force", false, "force overwrite of existing objects")
+	flagVerbose      = flag.Bool("v", false, "verbose output")
 
 	// The args after flags.
 	argCommand string
 	argPath    string
 )
+
+var cancel = make(chan os.Signal, 1)
 
 // TODO use first $XDG_CONFIG_HOME then try $XDG_CONFIG_DIRS
 var tryConfigDirs = []string{"~/.config/grafana+", ".grafana+"}
@@ -71,14 +75,14 @@ func main() {
 	if flag.NArg() > 1 {
 		argPath = args[1]
 	}
+	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
 	switch argCommand {
 	case "backup":
 		doBackup(serverInstance(), matchDashboard())
 	case "restore":
 		doRestore(serverInstance(), matchFilename())
 	case "ls":
-		// TBD
-		// doDashboardList(matchDashboard())
+		doDashboardList(serverInstance(), matchDashboard())
 	case "ls-files":
 		// TBD
 	case "ls-ds":
@@ -104,29 +108,31 @@ type command struct {
 	tags       []string
 	starred    bool
 	filenames  []string
+	force      bool
+	verbose    bool
 }
 
 type option func(*command) error
 
 func serverInstance() option {
 	return func(c *command) error {
-		if flagServerURL != "" {
+		if *flagServerURL == "" {
 			return errors.New("you should provide the server URL")
 		}
-		if flagServerKey != "" {
+		if *flagServerKey == "" {
 			return errors.New("you should provide the server API key")
 		}
-		c.grafana = client.New(flagServerURL, flagServerKey, &http.Client{Timeout: flagTimeout})
+		c.grafana = client.New(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
 		return nil
 	}
 }
 
 func matchDashboard() option {
 	return func(c *command) error {
-		c.boardTitle = flagBoardTitle
-		c.starred = flagStarred
-		if flagTags != "" {
-			for _, tag := range strings.Split(flagTags, ",") {
+		c.boardTitle = *flagBoardTitle
+		c.starred = *flagStarred
+		if *flagTags != "" {
+			for _, tag := range strings.Split(*flagTags, ",") {
 				c.tags = append(c.tags, strings.TrimSpace(tag))
 			}
 		}
@@ -153,7 +159,7 @@ func matchFilename() option {
 
 func initCommand(opts ...option) *command {
 	var (
-		cmd = &command{}
+		cmd = &command{force: *flagForce, verbose: *flagVerbose}
 		err error
 	)
 	for _, opt := range opts {
