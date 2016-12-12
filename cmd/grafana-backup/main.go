@@ -52,7 +52,7 @@ var (
 
 	// The args after flags.
 	argCommand string
-	argPath    string
+	argPath    = "*"
 )
 
 var cancel = make(chan os.Signal, 1)
@@ -84,7 +84,7 @@ func main() {
 	case "ls":
 		doDashboardList(serverInstance(), matchDashboard())
 	case "ls-files":
-		// TBD
+		doFileList(matchFilename(), matchDashboard())
 	case "ls-ds":
 		// TBD
 	case "ls-users":
