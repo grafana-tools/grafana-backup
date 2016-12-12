@@ -3,7 +3,17 @@
 CLI for the simple backup/restore operations on Grafana dashboards and datasources.
 It based on [autograf](https://github.com/grafov/autograf) library for Grafana.
 
-**Work in progress.**
+**Work in progress. Current state: it works partially.**
+
+## Examples
+
+	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title "sample api"" ls
+		
+	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title sample backup
+	
+	$ grafana-backup ls-files
+	
+	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1 restore
 
     $ grafana-backup
 
@@ -33,11 +43,9 @@ It based on [autograf](https://github.com/grafov/autograf) library for Grafana.
         	read flagTimeout for interacting with Grafana (seconds) (default 6m0s)
           -url string
             	URL of Grafana server
-          -v	verbose output
+          -v	verbose output	
         
-        
-        
-**Proposed commands, flags and args**
+## List of proposed commands, flags and args
 
 Draft and it is subject for changes.
 
@@ -67,8 +75,3 @@ Draft and it is subject for changes.
 
 	# Flag applied for backup/restore
 	-objects=auto,dashboards,datasources,users,all
-
-        
-        
-        
-    
