@@ -37,9 +37,13 @@ func doRestore(opts ...option) {
 				fmt.Fprintf(os.Stderr, "error on read %s", filename)
 				continue
 			}
+			// TODO add db match filters
 			if err = cmd.grafana.SetRawDashboard(rawBoard); err != nil {
 				fmt.Fprintf(os.Stderr, "error on importing dashboard from %s", filename)
 				continue
+			}
+			if cmd.verbose {
+				fmt.Printf("Dashboard restored from %s.\n", filename)
 			}
 		}
 	}
