@@ -25,13 +25,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
-	"path/filepath"
-
-	"github.com/grafov/autograf/client"
+	"github.com/grafana-tools/sdk"
 )
 
 var (
@@ -103,7 +102,7 @@ func main() {
 }
 
 type command struct {
-	grafana    *client.Instance
+	grafana    *sdk.Client
 	boardTitle string
 	tags       []string
 	starred    bool
@@ -122,7 +121,7 @@ func serverInstance() option {
 		if *flagServerKey == "" {
 			return errors.New("you should provide the server API key")
 		}
-		c.grafana = client.New(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
+		c.grafana = sdk.NewClient(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
 		return nil
 	}
 }

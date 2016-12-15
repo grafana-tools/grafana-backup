@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/grafov/autograf/client"
+	"github.com/grafana-tools/sdk"
 )
 
 func doDashboardList(opts ...option) {
 	var (
 		cmd         = initCommand(opts...)
-		foundBoards []client.FoundBoard
+		foundBoards []sdk.FoundBoard
 		err         error
 	)
 	if foundBoards, err = cmd.grafana.SearchDashboards(cmd.boardTitle, cmd.starred, cmd.tags...); err != nil {

@@ -23,15 +23,15 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/grafov/autograf/client"
+	"github.com/grafana-tools/sdk"
 )
 
 func doBackup(opts ...option) {
 	var (
 		cmd        = initCommand(opts...)
-		boardLinks []client.FoundBoard
+		boardLinks []sdk.FoundBoard
 		rawBoard   []byte
-		meta       client.BoardProperties
+		meta       sdk.BoardProperties
 		err        error
 	)
 	if boardLinks, err = cmd.grafana.SearchDashboards(cmd.boardTitle, cmd.starred, cmd.tags...); err != nil {

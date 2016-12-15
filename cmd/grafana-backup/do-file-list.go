@@ -26,15 +26,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/grafov/autograf/grafana"
+	"github.com/grafana-tools/sdk"
 )
 
 func doFileList(opts ...option) {
 	var (
 		cmd  = initCommand(opts...)
 		file *os.File
-		db   grafana.Board
-		ds   grafana.Datasource
+		db   sdk.Board
+		ds   sdk.Datasource
 		err  error
 	)
 	for _, filename := range cmd.filenames {
