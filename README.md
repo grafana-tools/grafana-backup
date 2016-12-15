@@ -1,7 +1,7 @@
 # Backup tool for Gafana
 
 CLI for the simple backup/restore operations on Grafana dashboards and datasources.
-It based on [autograf](https://github.com/grafov/autograf) library for Grafana.
+It uses [Grafana client SDK](https://github.com/grafana-tools/sdk).
 
 **Work in progress. Current state: it works partially.**
 
