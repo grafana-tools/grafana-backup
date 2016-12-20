@@ -77,13 +77,13 @@ func main() {
 	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
 	switch argCommand {
 	case "backup":
-		doBackup(serverInstance(), matchDashboard())
+		doBackup(serverInstance, matchDashboard)
 	case "restore":
-		doRestore(serverInstance(), matchFilename())
+		doRestore(serverInstance, matchFilename)
 	case "ls":
-		doDashboardList(serverInstance(), matchDashboard())
+		doDashboardList(serverInstance, matchDashboard)
 	case "ls-files":
-		doFileList(matchFilename(), matchDashboard())
+		doFileList(matchFilename, matchDashboard)
 	case "ls-ds":
 		// TBD
 	case "ls-users":
@@ -113,47 +113,41 @@ type command struct {
 
 type option func(*command) error
 
-func serverInstance() option {
-	return func(c *command) error {
-		if *flagServerURL == "" {
-			return errors.New("you should provide the server URL")
-		}
-		if *flagServerKey == "" {
-			return errors.New("you should provide the server API key")
-		}
-		c.grafana = sdk.NewClient(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
-		return nil
+func serverInstance(c *command) error {
+	if *flagServerURL == "" {
+		return errors.New("you should provide the server URL")
 	}
+	if *flagServerKey == "" {
+		return errors.New("you should provide the server API key")
+	}
+	c.grafana = sdk.NewClient(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
+	return nil
 }
 
-func matchDashboard() option {
-	return func(c *command) error {
-		c.boardTitle = *flagBoardTitle
-		c.starred = *flagStarred
-		if *flagTags != "" {
-			for _, tag := range strings.Split(*flagTags, ",") {
-				c.tags = append(c.tags, strings.TrimSpace(tag))
-			}
+func matchDashboard(c *command) error {
+	c.boardTitle = *flagBoardTitle
+	c.starred = *flagStarred
+	if *flagTags != "" {
+		for _, tag := range strings.Split(*flagTags, ",") {
+			c.tags = append(c.tags, strings.TrimSpace(tag))
 		}
-		return nil
 	}
+	return nil
 }
 
-func matchFilename() option {
-	return func(c *command) error {
-		var (
-			files []string
-			err   error
-		)
-		if files, err = filepath.Glob(argPath); err != nil {
-			return err
-		}
-		if len(files) == 0 {
-			return errors.New("there are no files matching selected pattern found")
-		}
-		c.filenames = files
-		return nil
+func matchFilename(c *command) error {
+	var (
+		files []string
+		err   error
+	)
+	if files, err = filepath.Glob(argPath); err != nil {
+		return err
 	}
+	if len(files) == 0 {
+		return errors.New("there are no files matching selected pattern found")
+	}
+	c.filenames = files
+	return nil
 }
 
 func initCommand(opts ...option) *command {
