@@ -85,7 +85,7 @@ func main() {
 	case "ls-files":
 		doFileList(matchFilename, matchDashboard)
 	case "ls-ds":
-		// TBD
+		doDatasourceList(serverInstance)
 	case "ls-users":
 		// TBD
 	case "config-set":
