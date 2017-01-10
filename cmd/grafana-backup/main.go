@@ -1,5 +1,5 @@
 // Backup tool for Grafana.
-// Copyright (C) 2016  Alexander I.Grafov <siberian@laika.name>
+// Copyright (C) 2016-2017  Alexander I.Grafov <siberian@laika.name>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ func main() {
 	case "ls-ds":
 		doDatasourceList(serverInstance)
 	case "ls-users":
-		// TBD
+		doUserList(serverInstance)
 	case "config-set":
 		// TBD
 		// doConfigSet()
