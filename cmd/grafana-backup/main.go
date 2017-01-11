@@ -45,9 +45,9 @@ var (
 	flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
 
 	// Common flags.
-	flagMatchObjects = flag.String("objects", "auto", "apply operation only for objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
-	flagForce        = flag.Bool("force", false, "force overwrite of existing objects")
-	flagVerbose      = flag.Bool("v", false, "verbose output")
+	flagApplyFor = flag.String("apply-for", "auto", "apply operation only for some kind of objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
+	flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
+	flagVerbose  = flag.Bool("verb", false, "verbose output")
 
 	// The args after flags.
 	argCommand string
@@ -77,16 +77,22 @@ func main() {
 	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
 	switch argCommand {
 	case "backup":
-		doBackup(serverInstance, matchDashboard)
+		// TODO fix logic accordingly with apply-for
+		doBackup(serverInstance, applyFor, matchDashboard)
 	case "restore":
-		doRestore(serverInstance, matchFilename)
+		// TODO fix logic accordingly with apply-for
+		doRestore(serverInstance, applyFor, matchFilename)
 	case "ls":
-		doDashboardList(serverInstance, matchDashboard)
+		// TODO fix logic accordingly with apply-for
+		doDashboardList(serverInstance, applyFor, matchDashboard)
 	case "ls-files":
-		doFileList(matchFilename, matchDashboard)
+		// TODO merge this command with ls
+		doFileList(matchFilename, applyFor, matchDashboard)
 	case "ls-ds":
+		// TODO merge this command with ls
 		doDatasourceList(serverInstance)
 	case "ls-users":
+		// TODO merge this command with ls
 		doUserList(serverInstance)
 	case "config-set":
 		// TBD
@@ -102,13 +108,16 @@ func main() {
 }
 
 type command struct {
-	grafana    *sdk.Client
-	boardTitle string
-	tags       []string
-	starred    bool
-	filenames  []string
-	force      bool
-	verbose    bool
+	grafana        *sdk.Client
+	applyForBoards bool
+	applyForDs     bool
+	applyForUsers  bool
+	boardTitle     string
+	tags           []string
+	starred        bool
+	filenames      []string
+	force          bool
+	verbose        bool
 }
 
 type option func(*command) error
@@ -121,6 +130,19 @@ func serverInstance(c *command) error {
 		return errors.New("you should provide the server API key")
 	}
 	c.grafana = sdk.NewClient(*flagServerURL, *flagServerKey, &http.Client{Timeout: *flagTimeout})
+	return nil
+}
+
+func applyFor(c *command) error {
+	switch strings.ToLower(*flagApplyFor) {
+	case "dashboards":
+		c.applyForBoards = true
+	case "datasources":
+		c.applyForDs = true
+	case "users":
+		c.applyForUsers = true
+	}
+	// TODO case for "auto"
 	return nil
 }
 
