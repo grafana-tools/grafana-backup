@@ -37,15 +37,14 @@ var (
 	// Connection flags.
 	flagServerURL = flag.String("url", "", "URL of Grafana server")
 	flagServerKey = flag.String("key", "", "API key of Grafana server")
-	flagTimeout   = flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana (seconds)")
+	flagTimeout   = flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana in seconds")
 
 	// Dashboard matching flags.
 	flagTags       = flag.String("tag", "", "dashboard should match all these tags")
 	flagBoardTitle = flag.String("title", "", "dashboard title should match name")
 	flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
-
 	// Common flags.
-	flagApplyFor = flag.String("apply-for", "auto", "apply operation only for some kind of objects (available values are AUTO, DASHBOARDS, DATASOURCES, ALL)")
+	flagApplyFor = flag.String("apply-for", "all", `apply operation only for some kind of objects, available values are "all", "dashboards", "datasources", "users"`)
 	flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
 	flagVerbose  = flag.Bool("verb", false, "verbose output")
 
@@ -84,16 +83,10 @@ func main() {
 		doRestore(serverInstance, applyFor, matchFilename)
 	case "ls":
 		// TODO fix logic accordingly with apply-for
-		doDashboardList(serverInstance, applyFor, matchDashboard)
+		doObjectList(serverInstance, applyFor, matchDashboard)
 	case "ls-files":
 		// TODO merge this command with ls
 		doFileList(matchFilename, applyFor, matchDashboard)
-	case "ls-ds":
-		// TODO merge this command with ls
-		doDatasourceList(serverInstance)
-	case "ls-users":
-		// TODO merge this command with ls
-		doUserList(serverInstance)
 	case "config-set":
 		// TBD
 		// doConfigSet()
@@ -101,7 +94,7 @@ func main() {
 		// TBD
 		// doConfigGet()
 	default:
-		fmt.Fprintf(os.Stderr, fmt.Sprintf("Unknown command: %s\n\n", args[0]))
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("unknown command: %s\n\n", args[0]))
 		printUsage()
 		os.Exit(1)
 	}
@@ -134,15 +127,25 @@ func serverInstance(c *command) error {
 }
 
 func applyFor(c *command) error {
-	switch strings.ToLower(*flagApplyFor) {
-	case "dashboards":
-		c.applyForBoards = true
-	case "datasources":
-		c.applyForDs = true
-	case "users":
-		c.applyForUsers = true
+	if *flagApplyFor == "" {
+		return fmt.Errorf("flag '-apply-for' provided with empty argument")
 	}
-	// TODO case for "auto"
+	for _, objectKind := range strings.Split(strings.ToLower(*flagApplyFor), ",") {
+		switch objectKind {
+		case "all":
+			c.applyForBoards = true
+			c.applyForDs = true
+			c.applyForUsers = true
+		case "dashboards":
+			c.applyForBoards = true
+		case "datasources":
+			c.applyForDs = true
+		case "users":
+			c.applyForUsers = true
+		default:
+			return fmt.Errorf("unknown argument %s", objectKind)
+		}
+	}
 	return nil
 }
 
@@ -189,7 +192,7 @@ func initCommand(opts ...option) *command {
 
 func printUsage() {
 	fmt.Println(`Backup tool for Grafana.
-Copyright (C) 2016  Alexander I.Grafov <siberian@laika.name>
+Copyright (C) 2016-2017  Alexander I.Grafov <siberian@laika.name>
 
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it

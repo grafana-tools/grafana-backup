@@ -11,7 +11,7 @@ It uses [Grafana client SDK](https://github.com/grafana-tools/sdk).
 		
 	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title sample backup
 	
-	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -objects all
+	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -apply-for all
 	
 	$ grafana-backup ls-files
 	
