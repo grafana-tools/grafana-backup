@@ -44,7 +44,7 @@ var (
 	flagBoardTitle = flag.String("title", "", "dashboard title should match name")
 	flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
 	// Common flags.
-	flagApplyFor = flag.String("apply-for", "all", `apply operation only for some kind of objects, available values are "all", "dashboards", "datasources", "users"`)
+	flagApplyFor = flag.String("apply-for", "auto", `apply operation only for some kind of objects, available values are "auto", "all", "dashboards", "datasources", "users"`)
 	flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
 	flagVerbose  = flag.Bool("verb", false, "verbose output")
 
@@ -102,6 +102,7 @@ func main() {
 
 type command struct {
 	grafana        *sdk.Client
+	autoApply      bool
 	applyForBoards bool
 	applyForDs     bool
 	applyForUsers  bool
@@ -132,6 +133,8 @@ func applyFor(c *command) error {
 	}
 	for _, objectKind := range strings.Split(strings.ToLower(*flagApplyFor), ",") {
 		switch objectKind {
+		case "auto":
+			c.autoApply = true
 		case "all":
 			c.applyForBoards = true
 			c.applyForDs = true
