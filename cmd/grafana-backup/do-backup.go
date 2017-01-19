@@ -1,5 +1,5 @@
 // Backup tool for Grafana.
-// Copyright (C) 2016  Alexander I.Grafov <siberian@laika.name>
+// Copyright (C) 2016-2017  Alexander I.Grafov <siberian@laika.name>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,27 @@ import (
 
 func doBackup(opts ...option) {
 	var (
-		cmd        = initCommand(opts...)
+		cmd = initCommand(opts...)
+	)
+	if cmd.applyForHierarchy {
+		//		backupDashboardHierarchy()
+		backupDashboards(cmd)
+		return
+	}
+	if cmd.applyForBoards {
+		backupDashboards(cmd)
+	}
+	if cmd.applyForDs {
+		//		backupDatasources()
+	}
+	if cmd.applyForUsers {
+		//		backupUsers()
+	}
+
+}
+
+func backupDashboards(cmd *command) {
+	var (
 		boardLinks []sdk.FoundBoard
 		rawBoard   []byte
 		meta       sdk.BoardProperties
@@ -62,4 +82,5 @@ func doBackup(opts ...option) {
 	}
 Exit:
 	fmt.Println()
+
 }

@@ -46,7 +46,7 @@ var (
 	// Common flags.
 	flagApplyFor = flag.String("apply-for", "auto", `apply operation only for some kind of objects, available values are "auto", "all", "dashboards", "datasources", "users"`)
 	flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
-	flagVerbose  = flag.Bool("verb", false, "verbose output")
+	flagVerbose  = flag.Bool("verbose", false, "verbose output")
 
 	// The args after flags.
 	argCommand string
@@ -101,17 +101,17 @@ func main() {
 }
 
 type command struct {
-	grafana        *sdk.Client
-	autoApply      bool
-	applyForBoards bool
-	applyForDs     bool
-	applyForUsers  bool
-	boardTitle     string
-	tags           []string
-	starred        bool
-	filenames      []string
-	force          bool
-	verbose        bool
+	grafana           *sdk.Client
+	applyForHierarchy bool
+	applyForBoards    bool
+	applyForDs        bool
+	applyForUsers     bool
+	boardTitle        string
+	tags              []string
+	starred           bool
+	filenames         []string
+	force             bool
+	verbose           bool
 }
 
 type option func(*command) error
@@ -134,7 +134,9 @@ func applyFor(c *command) error {
 	for _, objectKind := range strings.Split(strings.ToLower(*flagApplyFor), ",") {
 		switch objectKind {
 		case "auto":
-			c.autoApply = true
+			c.applyForHierarchy = true
+			c.applyForBoards = true
+			c.applyForDs = true
 		case "all":
 			c.applyForBoards = true
 			c.applyForDs = true
