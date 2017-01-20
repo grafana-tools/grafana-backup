@@ -31,19 +31,23 @@ func doBackup(opts ...option) {
 		cmd = initCommand(opts...)
 	)
 	if cmd.applyForHierarchy {
-		//		backupDashboardHierarchy()
-		backupDashboards(cmd)
+		backupDashboardsRecursively()
 		return
 	}
 	if cmd.applyForBoards {
 		backupDashboards(cmd)
 	}
+
 	if cmd.applyForDs {
-		//		backupDatasources()
+		backupDatasources(cmd)
 	}
 	if cmd.applyForUsers {
-		//		backupUsers()
+		backupUsers(cmd)
 	}
+
+}
+
+func backupDashboardsRecursively(cmd *command) {
 
 }
 
@@ -82,5 +86,9 @@ func backupDashboards(cmd *command) {
 	}
 Exit:
 	fmt.Println()
+
+}
+
+func backupUsers(cmd *command) {
 
 }

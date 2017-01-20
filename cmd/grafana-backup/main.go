@@ -211,3 +211,9 @@ Call 'grafana-backup help <command>' for details about the command.
 	flag.PrintDefaults()
 
 }
+
+func exit() {
+	fmt.Fprintf(os.Stderr, "Execution was cancelled.")
+	fmt.Println()
+	os.Exit(1)
+}

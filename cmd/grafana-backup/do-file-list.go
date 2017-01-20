@@ -29,6 +29,7 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
+// TODO adapt for apply-for
 func doFileList(opts ...option) {
 	var (
 		cmd  = initCommand(opts...)
