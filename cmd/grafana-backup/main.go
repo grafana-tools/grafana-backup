@@ -101,17 +101,17 @@ func main() {
 }
 
 type command struct {
-	grafana           *sdk.Client
-	applyForHierarchy bool
-	applyForBoards    bool
-	applyForDs        bool
-	applyForUsers     bool
-	boardTitle        string
-	tags              []string
-	starred           bool
-	filenames         []string
-	force             bool
-	verbose           bool
+	grafana             *sdk.Client
+	applyHierarchically bool
+	applyForBoards      bool
+	applyForDs          bool
+	applyForUsers       bool
+	boardTitle          string
+	tags                []string
+	starred             bool
+	filenames           []string
+	force               bool
+	verbose             bool
 }
 
 type option func(*command) error
@@ -212,8 +212,7 @@ Call 'grafana-backup help <command>' for details about the command.
 
 }
 
-func exit() {
-	fmt.Fprintf(os.Stderr, "Execution was cancelled.")
-	fmt.Println()
+func exitBySignal() {
+	fmt.Fprintf(os.Stderr, "Execution was cancelled.\n")
 	os.Exit(1)
 }

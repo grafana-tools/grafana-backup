@@ -19,6 +19,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -30,14 +31,13 @@ func doBackup(opts ...option) {
 	var (
 		cmd = initCommand(opts...)
 	)
-	if cmd.applyForHierarchy {
-		backupDashboardsRecursively()
+	if cmd.applyHierarchically {
+		backupDashboardsHierchically()
 		return
 	}
 	if cmd.applyForBoards {
 		backupDashboards(cmd)
 	}
-
 	if cmd.applyForDs {
 		backupDatasources(cmd)
 	}
@@ -47,8 +47,8 @@ func doBackup(opts ...option) {
 
 }
 
-func backupDashboardsRecursively(cmd *command) {
-
+func backupDashboardsHierchically(cmd *command) {
+	// TODO db+ds
 }
 
 func backupDashboards(cmd *command) {
@@ -68,27 +68,86 @@ func backupDashboards(cmd *command) {
 	for _, link := range boardLinks {
 		select {
 		case <-cancel:
-			fmt.Fprintf(os.Stderr, "Execution was cancelled.")
-			goto Exit
+			exitBySignal()
 		default:
 			if rawBoard, meta, err = cmd.grafana.GetRawDashboard(link.URI); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
 				continue
 			}
-			if err = ioutil.WriteFile(fmt.Sprintf("%s.json", meta.Slug), rawBoard, os.FileMode(int(0666))); err != nil {
+			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
+			if err = ioutil.WriteFile(fname, rawBoard, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
 				continue
 			}
 			if cmd.verbose {
-				fmt.Printf("%s.json backuped ok.\n", meta.Slug)
+				fmt.Printf("%s writen into %s.\n", meta.Slug, fname)
 			}
 		}
 	}
-Exit:
-	fmt.Println()
-
 }
 
 func backupUsers(cmd *command) {
+	var (
+		allUsers []sdk.User
+		rawUser  []byte
+		err      error
+	)
+	if allUsers, err = cmd.grafana.GetAllUsers(); err != nil {
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
+		return
+	}
+	for _, user := range allUsers {
+		select {
+		case <-cancel:
+			exitBySignal()
+		default:
+			rawUser, _ = json.Marshal(user)
+			var fname = fmt.Sprintf("%s.user.%d.json", user.Login, user.OrgID)
+			if err = ioutil.WriteFile(fname, rawUser, os.FileMode(int(0666))); err != nil {
+				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s on writing %s\n", err, fname))
+				continue
+			}
+			if cmd.verbose {
+				fmt.Printf("%s written into %s\n", user.Name, fname)
+			}
+		}
+	}
+}
+
+func backupDatasources(cmd *command, users ...map[string]bool) {
+	var (
+		allDatasources []sdk.Datasource
+		rawDs          []byte
+		err            error
+	)
+	if allDatasources, err = cmd.grafana.GetAllDatasources(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return
+	}
+	if cmd.verbose {
+		fmt.Printf("Found %d datasources.\n", len(allDatasources))
+	}
+	for _, ds := range allDatasources {
+		select {
+		case <-cancel:
+			exitBySignal()
+		default:
+			if rawDs, err = json.Marshal(ds); err != nil {
+				fmt.Fprintf(os.Stderr, "datasource marshal error %s\n", err)
+				continue
+			}
+			var fname = fmt.Sprintf("%s.ds.%d.json", ds.Name, ds.OrgID)
+			if err = ioutil.WriteFile(fname, rawDs, os.FileMode(int(0666))); err != nil {
+				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, ds.Name))
+				continue
+			}
+			if cmd.verbose {
+				fmt.Printf("%s written into %s", ds.Name, fname)
+			}
+		}
+	}
+}
+
+func backupHierarchically(cmd *command) {
 
 }
