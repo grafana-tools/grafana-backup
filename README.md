@@ -3,7 +3,7 @@
 CLI for the simple backup/restore operations on Grafana dashboards and datasources.
 It uses [Grafana client SDK](https://github.com/grafana-tools/sdk).
 
-**Work in progress. Current state: it works partially.**
+**Work in progress. Current state: it may works, may not. Depends on build. Don't use it yet!**
 
 ## Examples
 
