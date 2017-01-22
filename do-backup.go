@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/gosimple/slug"
 	"github.com/grafana-tools/sdk"
 )
 
@@ -47,6 +48,7 @@ func doBackup(opts ...option) {
 
 }
 
+// TODO merge with backupDashboards
 func backupDashboardsHierchically(cmd *command) {
 	var (
 		boardLinks  []sdk.FoundBoard
@@ -72,7 +74,7 @@ func backupDashboardsHierchically(cmd *command) {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
 				continue
 			}
-			if err = json.Unmarshal(rawBoard, board); err != nil {
+			if err = json.Unmarshal(rawBoard, &board); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s parsing %s\n", err, meta.Slug))
 			} else {
 				extractDatasources(datasources, board)
@@ -87,6 +89,7 @@ func backupDashboardsHierchically(cmd *command) {
 			}
 		}
 	}
+	backupDatasources(cmd, datasources)
 }
 
 func backupDashboards(cmd *command) {
@@ -140,7 +143,7 @@ func backupUsers(cmd *command) {
 			exitBySignal()
 		default:
 			rawUser, _ = json.Marshal(user)
-			var fname = fmt.Sprintf("%s.user.%d.json", user.Login, user.OrgID)
+			var fname = fmt.Sprintf("%s.user.%d.json", slug.Make(user.Login), user.OrgID)
 			if err = ioutil.WriteFile(fname, rawUser, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s on writing %s\n", err, fname))
 				continue
@@ -179,7 +182,7 @@ func backupDatasources(cmd *command, datasources map[string]bool) {
 				fmt.Fprintf(os.Stderr, "datasource marshal error %s\n", err)
 				continue
 			}
-			var fname = fmt.Sprintf("%s.ds.%d.json", ds.Name, ds.OrgID)
+			var fname = fmt.Sprintf("%s.ds.%d.json", slug.Make(ds.Name), ds.OrgID)
 			if err = ioutil.WriteFile(fname, rawDs, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, ds.Name))
 				continue
@@ -196,6 +199,7 @@ func extractDatasources(datasources map[string]bool, board sdk.Board) {
 		for _, panel := range row.Panels {
 			if panel.Datasource != nil {
 				datasources[*panel.Datasource] = true
+				fmt.Println(slug.Make(*panel.Datasource))
 			}
 		}
 	}
