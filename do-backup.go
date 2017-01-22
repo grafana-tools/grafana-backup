@@ -33,7 +33,7 @@ func doBackup(opts ...option) {
 		cmd = initCommand(opts...)
 	)
 	if cmd.applyHierarchically {
-		backupDashboardsHierchically(cmd)
+		backupDashboards(cmd)
 		return
 	}
 	if cmd.applyForBoards {
@@ -48,8 +48,7 @@ func doBackup(opts ...option) {
 
 }
 
-// TODO merge with backupDashboards
-func backupDashboardsHierchically(cmd *command) {
+func backupDashboards(cmd *command) {
 	var (
 		boardLinks  []sdk.FoundBoard
 		rawBoard    []byte
@@ -74,10 +73,12 @@ func backupDashboardsHierchically(cmd *command) {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
 				continue
 			}
-			if err = json.Unmarshal(rawBoard, &board); err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s parsing %s\n", err, meta.Slug))
-			} else {
-				extractDatasources(datasources, board)
+			if cmd.applyHierarchically {
+				if err = json.Unmarshal(rawBoard, &board); err != nil {
+					fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s parsing %s\n", err, meta.Slug))
+				} else {
+					extractDatasources(datasources, board)
+				}
 			}
 			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
 			if err = ioutil.WriteFile(fname, rawBoard, os.FileMode(int(0666))); err != nil {
@@ -89,41 +90,8 @@ func backupDashboardsHierchically(cmd *command) {
 			}
 		}
 	}
-	backupDatasources(cmd, datasources)
-}
-
-func backupDashboards(cmd *command) {
-	var (
-		boardLinks []sdk.FoundBoard
-		rawBoard   []byte
-		meta       sdk.BoardProperties
-		err        error
-	)
-	if boardLinks, err = cmd.grafana.SearchDashboards(cmd.boardTitle, cmd.starred, cmd.tags...); err != nil {
-		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
-		os.Exit(1)
-	}
-	if cmd.verbose {
-		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
-	}
-	for _, link := range boardLinks {
-		select {
-		case <-cancel:
-			exitBySignal()
-		default:
-			if rawBoard, meta, err = cmd.grafana.GetRawDashboard(link.URI); err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
-				continue
-			}
-			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
-			if err = ioutil.WriteFile(fname, rawBoard, os.FileMode(int(0666))); err != nil {
-				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
-				continue
-			}
-			if cmd.verbose {
-				fmt.Printf("%s writen into %s.\n", meta.Slug, fname)
-			}
-		}
+	if cmd.applyHierarchically {
+		backupDatasources(cmd, datasources)
 	}
 }
 
