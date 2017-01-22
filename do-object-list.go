@@ -28,7 +28,6 @@ import (
 func doObjectList(opts ...option) {
 	var (
 		cmd = initCommand(opts...)
-		err error
 	)
 	if cmd.applyForBoards {
 		listDashboards(cmd)
@@ -53,7 +52,7 @@ func listDashboards(cmd *command) {
 	for _, meta := range foundBoards {
 		select {
 		case <-cancel:
-			exit()
+			exitBySignal()
 		default:
 			fmt.Printf("<%d> \"%s\" %v ", meta.ID, meta.Title, meta.Tags)
 			if meta.IsStarred {
@@ -79,7 +78,7 @@ func listDatasources(cmd *command) {
 	for _, ds := range datasources {
 		select {
 		case <-cancel:
-			exit()
+			exitBySignal()
 		default:
 			fmt.Printf("<%d> \"%s\" (%s) %s\n", ds.ID, ds.Name, ds.Type, ds.URL)
 		}
@@ -101,7 +100,7 @@ func listUsers(cmd *command) {
 	for _, user := range allUsers {
 		select {
 		case <-cancel:
-			exit()
+			exitBySignal()
 		default:
 			fmt.Printf("%s \"%s\" <%s>", user.Login, user.Name, user.Email)
 			if user.IsGrafanaAdmin {
@@ -110,7 +109,7 @@ func listUsers(cmd *command) {
 			fmt.Println()
 		}
 		if cmd.verbose {
-			fmt.Printf("Found %d users.\n", len(users))
+			fmt.Printf("Found %d users.\n", len(allUsers))
 		}
 	}
 }

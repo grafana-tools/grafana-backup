@@ -134,7 +134,7 @@ func applyFor(c *command) error {
 	for _, objectKind := range strings.Split(strings.ToLower(*flagApplyFor), ",") {
 		switch objectKind {
 		case "auto":
-			c.applyForHierarchy = true
+			c.applyHierarchically = true
 			c.applyForBoards = true
 			c.applyForDs = true
 		case "all":

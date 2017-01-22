@@ -32,14 +32,14 @@ func doBackup(opts ...option) {
 		cmd = initCommand(opts...)
 	)
 	if cmd.applyHierarchically {
-		backupDashboardsHierchically()
+		backupDashboardsHierchically(cmd)
 		return
 	}
 	if cmd.applyForBoards {
 		backupDashboards(cmd)
 	}
 	if cmd.applyForDs {
-		backupDatasources(cmd)
+		backupDatasources(cmd, nil)
 	}
 	if cmd.applyForUsers {
 		backupUsers(cmd)
@@ -48,7 +48,45 @@ func doBackup(opts ...option) {
 }
 
 func backupDashboardsHierchically(cmd *command) {
-	// TODO db+ds
+	var (
+		boardLinks  []sdk.FoundBoard
+		rawBoard    []byte
+		meta        sdk.BoardProperties
+		board       sdk.Board
+		datasources = make(map[string]bool)
+		err         error
+	)
+	if boardLinks, err = cmd.grafana.SearchDashboards(cmd.boardTitle, cmd.starred, cmd.tags...); err != nil {
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
+		os.Exit(1)
+	}
+	if cmd.verbose {
+		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
+	}
+	for _, link := range boardLinks {
+		select {
+		case <-cancel:
+			exitBySignal()
+		default:
+			if rawBoard, meta, err = cmd.grafana.GetRawDashboard(link.URI); err != nil {
+				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, link.URI))
+				continue
+			}
+			if err = json.Unmarshal(rawBoard, board); err != nil {
+				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s parsing %s\n", err, meta.Slug))
+			} else {
+				extractDatasources(datasources, board)
+			}
+			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
+			if err = ioutil.WriteFile(fname, rawBoard, os.FileMode(int(0666))); err != nil {
+				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
+				continue
+			}
+			if cmd.verbose {
+				fmt.Printf("%s writen into %s.\n", meta.Slug, fname)
+			}
+		}
+	}
 }
 
 func backupDashboards(cmd *command) {
@@ -114,7 +152,7 @@ func backupUsers(cmd *command) {
 	}
 }
 
-func backupDatasources(cmd *command, users ...map[string]bool) {
+func backupDatasources(cmd *command, datasources map[string]bool) {
 	var (
 		allDatasources []sdk.Datasource
 		rawDs          []byte
@@ -132,6 +170,11 @@ func backupDatasources(cmd *command, users ...map[string]bool) {
 		case <-cancel:
 			exitBySignal()
 		default:
+			if datasources != nil {
+				if _, ok := datasources[ds.Name]; !ok {
+					continue
+				}
+			}
 			if rawDs, err = json.Marshal(ds); err != nil {
 				fmt.Fprintf(os.Stderr, "datasource marshal error %s\n", err)
 				continue
@@ -148,6 +191,12 @@ func backupDatasources(cmd *command, users ...map[string]bool) {
 	}
 }
 
-func backupHierarchically(cmd *command) {
-
+func extractDatasources(datasources map[string]bool, board sdk.Board) {
+	for _, row := range board.Rows {
+		for _, panel := range row.Panels {
+			if panel.Datasource != nil {
+				datasources[*panel.Datasource] = true
+			}
+		}
+	}
 }
