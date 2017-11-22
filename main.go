@@ -96,21 +96,27 @@ func main() {
 	case "backup":
 		// TODO fix logic accordingly with apply-for
 		doBackup(serverInstance, applyFor, matchDashboard)
+		fmt.Println("Backup Complete.")
 	case "restore":
 		// TODO fix logic accordingly with apply-for
 		doRestore(serverInstance, applyFor, matchFilename)
+		fmt.Println("Restore Complete.")
 	case "ls":
 		// TODO fix logic accordingly with apply-for
 		doObjectList(serverInstance, applyFor, matchDashboard)
+		fmt.Println("ls Complete.")
 	case "ls-files":
 		// TODO merge this command with ls
 		doFileList(matchFilename, applyFor, matchDashboard)
+		fmt.Println("ls-files Complete.")
 	case "config-set":
 		// TBD
 		// doConfigSet()
+		fmt.Println("Command config-set not yet implemented.")
 	case "config-get":
 		// TBD
 		// doConfigGet()
+		fmt.Println("Command config-get not yet implemented.")
 	default:
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("unknown command: %s\n\n", args[0]))
 		printUsage()
