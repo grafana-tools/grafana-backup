@@ -150,7 +150,7 @@ func backupDatasources(cmd *command, datasources map[string]bool) {
 				fmt.Fprintf(os.Stderr, "datasource marshal error %s\n", err)
 				continue
 			}
-			var fname = fmt.Sprintf("%s-%d.ds.json", slug.Make(ds.Name), ds.OrgID)
+			var fname = fmt.Sprintf("%s.ds.%d.json", slug.Make(ds.Name), ds.OrgID)
 			if err = ioutil.WriteFile(fname, rawDs, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, ds.Name))
 				continue
