@@ -95,14 +95,44 @@ func restoreDashboards(cmd *command) {
 }
 
 func restoreDatasources(cmd *command, datasources map[string]bool) {
+	var (
+		//allDatasources []sdk.Datasource
+		rawDS          []byte
+		err            error
+	)
+
+	for _, filename := range cmd.filenames {
+		if strings.HasSuffix(filename, "db.json") {
+			if rawDS, err = ioutil.ReadFile(filename); err != nil {
+				fmt.Fprintf(os.Stderr, "error on read %s", filename)
+				continue
+			}
+
+			// TODO add db match filters
+
+			if err = cmd.grafana.SetRawDashboard(rawDS); err != nil {
+				fmt.Fprintf(os.Stderr, "error on importing dashboard from %s", filename)
+				continue
+			}
+			if cmd.verbose {
+				fmt.Printf("Dashboard restored from %s.\n", filename)
+			}
+		} else {
+			if cmd.verbose {
+				fmt.Fprintf(os.Stderr, "File %s does not appear to be a dashboard: Skipping file.", filename)
+			}
+
+		}
+	}
+
 	if cmd.verbose {
-		fmt.Fprint(os.Stderr, "Restoring datasources not yet implemented!")
+		fmt.Fprintln(os.Stderr, "Restoring datasources not yet implemented!")
 	}
 }
 
 func restoreUsers(cmd *command) {
 	if cmd.verbose {
-		fmt.Fprint(os.Stderr, "Restoring users not yet implemented!")
+		fmt.Fprintln(os.Stderr, "Restoring users not yet implemented!")
 	}
 }
 
