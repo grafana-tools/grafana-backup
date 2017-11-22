@@ -51,6 +51,10 @@ var (
 	// The args after flags.
 	argCommand string
 	argPath    = "*"
+
+	// Environment variables to read from
+	tokenKey = "GRAFANA_TOKEN" // Becomes flagServerKey
+	urlKey   = "GRAFANA_URL"   // Becomes flagServerURL
 )
 
 var cancel = make(chan os.Signal, 1)
@@ -62,10 +66,24 @@ func main() {
 	// TODO parse config here
 
 	flag.Parse()
+	// We need at minimum a command to execute so throw the printUsage if we don't have > 0 args
 	if flag.NArg() == 0 {
 		printUsage()
 		os.Exit(2)
 	}
+
+	// Set Token and URL from environment variables if they are present.
+	varToken := os.Getenv(tokenKey)
+	varURL := os.Getenv(urlKey)
+
+	if varToken != "" {
+		*flagServerKey = varToken
+	}
+
+	if varURL != "" {
+		*flagServerURL = varURL
+	}
+	
 	var args = flag.Args()
 	// First mandatory argument is command.
 	argCommand = args[0]
