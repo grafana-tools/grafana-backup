@@ -43,10 +43,12 @@ var (
 	flagTags       = flag.String("tag", "", "dashboard should match all these tags")
 	flagBoardTitle = flag.String("title", "", "dashboard title should match name")
 	flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
+
 	// Common flags.
 	flagApplyFor = flag.String("apply-for", "auto", `apply operation only for some kind of objects, available values are "auto", "all", "dashboards", "datasources", "users"`)
 	flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
 	flagVerbose  = flag.Bool("verbose", false, "verbose output")
+	flagDir      = flag.String("dir", "backup", "A directory to write backup files to or read them from.")
 
 	// The args after flags.
 	argCommand string
@@ -83,7 +85,7 @@ func main() {
 	if varURL != "" {
 		*flagServerURL = varURL
 	}
-	
+
 	var args = flag.Args()
 	// First mandatory argument is command.
 	argCommand = args[0]
@@ -130,6 +132,7 @@ type command struct {
 	filenames           []string
 	force               bool
 	verbose             bool
+	directory			string
 }
 
 type option func(*command) error
@@ -200,7 +203,7 @@ func matchFilename(c *command) error {
 
 func initCommand(opts ...option) *command {
 	var (
-		cmd = &command{force: *flagForce, verbose: *flagVerbose}
+		cmd = &command{force: *flagForce, verbose: *flagVerbose, directory: *flagDir}
 		err error
 	)
 	for _, opt := range opts {
