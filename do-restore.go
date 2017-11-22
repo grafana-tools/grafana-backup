@@ -23,6 +23,9 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"regexp"
+	"encoding/json"
+	"github.com/grafana-tools/sdk"
 )
 
 
@@ -43,7 +46,8 @@ func doRestore(opts ...option) {
 		restoreDashboards(cmd)
 	}
 	if cmd.applyForDs {
-		restoreDatasources(cmd, nil)
+		//restoreDatasources(cmd, nil)
+		restoreDatasources(cmd)
 	}
 	if cmd.applyForUsers {
 		restoreUsers(cmd)
@@ -56,7 +60,7 @@ func doRestore(opts ...option) {
 func restoreDashboards(cmd *command) {
 	var (
 		rawBoard    []byte
-		datasources = make(map[string]bool) // If cmd.applyHierarchically is true extract datasources from the dashboard and restore those as well.
+		//datasources = make(map[string]bool) // If cmd.applyHierarchically is true extract datasources from the dashboard and restore those as well.
 		err         error
 		// These three are used in backupDashboards, figure out what they're used for and if I want to implement them. -AF
 		//boardLinks  []sdk.FoundBoard
@@ -90,11 +94,13 @@ func restoreDashboards(cmd *command) {
 
 
 	if cmd.applyHierarchically {
-		restoreDatasources(cmd, datasources)
+		//restoreDatasources(cmd, datasources)
+		restoreDatasources(cmd)
 	}
 }
 
-func restoreDatasources(cmd *command, datasources map[string]bool) {
+func restoreDatasources(cmd *command) {
+//func restoreDatasources(cmd *command, datasources map[string]bool) {
 	var (
 		//allDatasources []sdk.Datasource
 		rawDS          []byte
@@ -102,31 +108,87 @@ func restoreDatasources(cmd *command, datasources map[string]bool) {
 	)
 
 	for _, filename := range cmd.filenames {
-		if strings.HasSuffix(filename, "db.json") {
+		pattern, _ := regexp.Compile(".*.ds.([0-9]+).json")
+
+		if pattern.MatchString(filename) {
 			if rawDS, err = ioutil.ReadFile(filename); err != nil {
 				fmt.Fprintf(os.Stderr, "error on read %s", filename)
 				continue
 			}
 
-			// TODO add db match filters
+			// TODO: Create a dashboard object and then POST or PUT it to the grafana server.
+			// Will probably want to either just PUT it or check if it exists depending upon how the API reacts.
 
-			if err = cmd.grafana.SetRawDashboard(rawDS); err != nil {
-				fmt.Fprintf(os.Stderr, "error on importing dashboard from %s", filename)
+
+			// TODO: most of this should probably be pushed upstream into grafana SDK in a CreateRawDatasource function
+
+			// From SetRawDashboard
+			var (
+				//rawResp []byte
+				resp    sdk.StatusMessage
+				//code    int
+				err     error
+				//buf     bytes.Buffer
+				//plain   = make(map[string]interface{})
+				plain   sdk.Datasource
+			)
+
+			if err = json.Unmarshal(rawDS, &plain); err != nil {
+				fmt.Fprintf(os.Stderr, "Error unmarshalling datasource from file %s: %s\n", filename, err)
+				continue
+			}
+
+			rawBoardNew, _ := json.Marshal(plain)
+
+			if cmd.verbose {
+				fmt.Printf("Datasource looks like:\n%s.\n", rawBoardNew)
+			}
+
+			//resp, err = cmd.grafana.CreateDatasource(plain)
+			resp, err = cmd.grafana.UpdateDatasource(plain)
+
+
+			fmt.Fprintf(os.Stderr, "Response:\n")
+
+			if resp.ID != nil {
+				fmt.Fprintf(os.Stderr, "\tID: %d\n", resp.ID)
+			}
+			if resp.Message != nil {
+				fmt.Fprintf(os.Stderr, "\tMessage: %s\n", *resp.Message)
+			}
+
+			if resp.Slug != nil {
+				fmt.Fprintf(os.Stderr, "\tSlug: %s\n", resp.Slug)
+			}
+
+			if resp.Version != nil {
+				fmt.Fprintf(os.Stderr, "\tVersion: %d\n", resp.Version)
+			}
+
+			if resp.Status != nil {
+				fmt.Fprintf(os.Stderr, "\tStatus: %s\n", resp.Status)
+			}
+
+			//ID      *uint   `json:"id"`
+			//Message *string `json:"message"`
+			//Slug    *string `json:"slug"`
+			//Version *int    `json:"version"`
+			//Status  *string `json:"resp"`
+
+			if err != nil {
+				//if err = cmd.grafana.SetRawDashboard(rawBoard); err != nil {
+				fmt.Fprintf(os.Stderr, "error on importing datasource from %s\n", filename)
 				continue
 			}
 			if cmd.verbose {
-				fmt.Printf("Dashboard restored from %s.\n", filename)
+				fmt.Printf("Datasource restored from %s.\n", filename)
 			}
 		} else {
 			if cmd.verbose {
-				fmt.Fprintf(os.Stderr, "File %s does not appear to be a dashboard: Skipping file.", filename)
+				fmt.Fprintf(os.Stderr, "File %s does not appear to be a datasource: Skipping file.\n", filename)
 			}
 
 		}
-	}
-
-	if cmd.verbose {
-		fmt.Fprintln(os.Stderr, "Restoring datasources not yet implemented!")
 	}
 }
 
