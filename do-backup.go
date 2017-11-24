@@ -20,14 +20,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/gosimple/slug"
 	"github.com/grafana-tools/sdk"
-	"errors"
-	"path"
 )
 
 func doBackup(opts ...option) {
