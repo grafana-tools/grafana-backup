@@ -196,7 +196,7 @@ func VerifyOrCreateDir(directory string) (error) {
 	stat, err := os.Stat(directory)
 	if err == nil {
 		if !stat.IsDir() {
-			return errors.New("Specified path is not a directory")
+			return errors.New("Specified path is not a directory!")
 		}
 		return nil
 	}

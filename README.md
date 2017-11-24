@@ -1,13 +1,19 @@
 # Backup tool for Gafana
 
-CLI for the simple backup/restore operations on Grafana dashboards and datasources.
+CLI for the simple backup/restore operations of [Grafana](https://grafana.com/) dashboards and datasources.
 It uses [Grafana client SDK](https://github.com/grafana-tools/sdk).
 
 **Work in progress. Current state: it may works, may not. Depends on build. Don't use it yet!**
 
 ## Examples
 
-	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title "sample api"" ls
+Backs up all dashboards and any datasources which they require. Backups will be saved as separate files in 
+the directory $CWD/backup
+
+    $ grafana-backup -url http://127.1:3000 -key xxxxxxxx backup
+
+
+	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title "sample api" ls
 		
 	$ grafana-backup -url http://127.1:3000 -key xxxxxxxx -tag tag1,tag2 -title sample backup
 	
