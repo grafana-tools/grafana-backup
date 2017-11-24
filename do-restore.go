@@ -29,6 +29,18 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
+//THIS IS BROKEN
+//It no longer restores
+//
+//The last thing I did was change from CreateDatasource to UpdateDatasource. Perhaps I did not recompile after I made the
+//change and I tested the wrong code (which is why I need to start using 'go run *.go' instead of compiling at all.)
+//
+//Change it back.
+//
+//Then figure out what happens if the datasource exists and I use CreateDatasource.
+//
+//Also it appears that restoreDatasources is being run twice.
+
 // Triggers a restore.
 func doRestore(opts ...option) {
 	var (
@@ -94,9 +106,10 @@ func restoreDashboards(cmd *command) {
 		//}
 	}
 
-	if cmd.applyHierarchically {
-		restoreDatasources(cmd)
-	}
+	// Disabling the 'heirarchal' functionality until it can be implemented properly.
+	//if cmd.applyHierarchically {
+	//	restoreDatasources(cmd)
+	//}
 }
 
 // Restores all datasource files. Currently those are files that match the format .*.ds.([0-9]+).json.
@@ -128,18 +141,24 @@ func restoreDatasources(cmd *command) {
 				continue
 			}
 
-			// TODO: See if there's a benefit to using CreateDatasource instead of UpdateDatasource
-			//resp, err = cmd.grafana.CreateDatasource(plain)
-			resp, err = cmd.grafana.UpdateDatasource(plain)
+			// TODO: Check to see if the datasource already exists and use the correct method or throw an error on update unless --force is specified.
+			resp, err = cmd.grafana.CreateDatasource(plain)
+			//resp, err = cmd.grafana.UpdateDatasource(plain)
 
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error importing datasource from %s: %s\n", filename, err)
 				continue
 			}
-			if *resp.Message != "Datasource updated" {
+
+			if *resp.Message == "Data source with same name already exists" {
+				//TODO: Update this so that we pull out the datasource name and give that in the message.
+				fmt.Fprintf(os.Stderr, "A Datasource with the same name as specified in %s already exists.\n", filename)
+				continue
+			} else if *resp.Message != "Datasource added" {
 				fmt.Fprintf(os.Stderr, "Error importing datasource from %s: %s\n", filename, *resp.Message)
 				continue
 			}
+
 			if cmd.verbose {
 				fmt.Printf("Datasource restored from %s.\n", filename)
 			}
