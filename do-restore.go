@@ -19,12 +19,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"regexp"
-	"encoding/json"
+	"strings"
+
 	"github.com/grafana-tools/sdk"
 )
 
