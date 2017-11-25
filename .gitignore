@@ -25,9 +25,12 @@ _testmain.go
 *.json
 /cmd/grafana-backup/grafana-backup
 
-
 # Ignored the compiled binary
 grafana-backup
+
+# Do not ignore the json files in the testdata directory
+!/testdata/*.json
+
 
 # Created by https://www.gitignore.io/api/go,eclipse,intellij+all
 
