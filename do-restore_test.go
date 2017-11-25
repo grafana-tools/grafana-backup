@@ -2,13 +2,13 @@ package main
 
 
 import (
+	"bytes"
+	"fmt"
+	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
-	"net/http"
-	"fmt"
-	"strings"
-	"bytes"
 )
 
 type testresults struct {
