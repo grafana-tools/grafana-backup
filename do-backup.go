@@ -67,6 +67,7 @@ func backupDashboards(cmd *command) {
 		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
 	}
 
+	// TODO: If this directory already exists prompt to overwrite (unless --force)
 	VerifyOrCreateDir(*flagDir)
 
 	for _, link := range boardLinks {
