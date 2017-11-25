@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
-	"os"
 )
 
 func TestBackupDashboards(t *testing.T) {
@@ -230,6 +230,7 @@ func TestBackupDashboards(t *testing.T) {
 		t.Error("test-dashboard-3 output file does not exist.")
 	}
 
+	//TODO: Compare the newly created files to the ones in testdata. Even better parse the JSON and check for specific values.
 	// Cleanup the output files. Clean up each file and directory explicitly so that we don't accidentally rm -rf something important.
 
 	//err = os.Remove("/var/tmp/testOutputDir/promt2local.ds.1.json")
@@ -243,8 +244,7 @@ func TestBackupDashboards(t *testing.T) {
 
 }
 
-
-//TODO: Create multiple tests which test things like sending multiple files
+//TODO: Create multiple tests which test things like sending multiple files, etc.
 func TestBackupDatasources(t *testing.T) {
 
 	//flagServerURL = flag.String("url", "", "URL of Grafana server")
