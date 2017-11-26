@@ -108,9 +108,11 @@ func main() {
 	case "config-set":
 		// TBD
 		// doConfigSet()
+		fmt.Fprintln(os.Stderr, "Command config-set not yet implemented!")
 	case "config-get":
 		// TBD
 		// doConfigGet()
+		fmt.Fprintln(os.Stderr, "Command config-get not yet implemented!")
 	default:
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("unknown command: %s\n\n", args[0]))
 		printUsage()

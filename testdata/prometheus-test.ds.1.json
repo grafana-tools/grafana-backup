@@ -1,0 +1,16 @@
+{
+  "id": 2,
+  "orgId": 1,
+  "name": "prometheus-test",
+  "type": "prometheus",
+  "access": "direct",
+  "url": "http://prometheus-test.example.com:9090",
+  "password": "",
+  "user": "",
+  "database": "",
+  "basicAuth": false,
+  "basicAuthUser": "",
+  "basicAuthPassword": "",
+  "isDefault": false,
+  "jsonData": {}
+}
