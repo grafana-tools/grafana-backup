@@ -8,21 +8,27 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	"path"
 )
+
+//TODO: Create a function to validate the existence of a set of files instead of writing that code in every test.
+//TODO: Create a function to clean up a set of files you pass it.
+//TODO: Create some sub functions for these so that we can be more specific on what fails each test. I.E. NoResponder should't cause us to fail Accept Header, body, etc.
+//TODO: Create some tests which include the following flags: timeout, tag, title, starred, force, verbose
 
 func TestBackupDashboards(t *testing.T) {
 	*flagServerURL = "http://noserver.nodomain.com:3123"
 	*flagServerKey = "thisisnotreallyanapikey"
 	*flagVerbose  = true
 	*flagApplyFor = "dashboards"
-	*flagDir      = "/var/tmp/testDashboardsOutDir"
+	*flagDir      = "/var/tmp/testDBOutDir"
 	argCommand = "backup"
 
 	// Some variables to track the results of the test
 
-	// Check the accept header.
+	// Accept header.
 	acceptCorrect    := false
-	// Check the content type.
+	// Content type header.
 	cTypeCorrect    := false
 	// Track how many times the API was called.
 	numRequests      := 0
@@ -93,8 +99,7 @@ func TestBackupDashboards(t *testing.T) {
 		},
 	)
 
-	// TODO: The requests for these 3 dashboards are being made but the files are not being created. There must be something wrong with the syntax.
-	// TODO: Compact these up a bit so that they aren't taking up so much screen real-estate
+	// TODO: Tune these dashboards so that they reflect more Grafana features which is the whole point of having three different ones.
 	// Create a responder for Test Dashboard 1
 	httpmock.RegisterResponder("GET", *flagServerURL + "/api/dashboards/db/test-dashboard-1",
 		func(req *http.Request) (*http.Response, error) {
@@ -208,7 +213,7 @@ func TestBackupDashboards(t *testing.T) {
 	//TODO: Confirm that they are correct instead of just confirming that they exist.
 
 	//name := "FileOrDir"
-	fi, err := os.Stat("/var/tmp/testDashboardsOutDir")
+	fi, err := os.Stat(*flagDir)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -218,66 +223,48 @@ func TestBackupDashboards(t *testing.T) {
 		t.Error("Output directory does not exist or is not a directory.")
 	}
 
-	if _, err := os.Stat("/var/tmp/testDashboardsOutDir/test-dashboard-1.db.json"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(*flagDir, "test-dashboard-1.db.json")); os.IsNotExist(err) {
 		t.Error("test-dashboard-1 output file does not exist.")
 	}
 
-	if _, err := os.Stat("/var/tmp/testDashboardsOutDir/test-dashboard-2.db.json"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(*flagDir, "test-dashboard-2.db.json")); os.IsNotExist(err) {
 		t.Error("test-dashboard-2 output file does not exist.")
 	}
 
-	if _, err := os.Stat("/var/tmp/testDashboardsOutDir/test-dashboard-3.db.json"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(*flagDir, "test-dashboard-3.db.json")); os.IsNotExist(err) {
 		t.Error("test-dashboard-3 output file does not exist.")
 	}
 
 	//TODO: Compare the newly created files to the ones in testdata. Even better parse the JSON and check for specific values.
 	// Cleanup the output files. Clean up each file and directory explicitly so that we don't accidentally rm -rf something important.
 
-	//err = os.Remove("/var/tmp/testOutputDir/promt2local.ds.1.json")
-	//err = os.Remove("/var/tmp/testOutputDir/prometheus-test.ds.1.json")
-	//err = os.Remove("/var/tmp/testOutputDir")
-	//
-	//if err != nil {
-	//	t.Errorf("Unable to clean up output file %s", err)
-	//}
+	err = os.Remove(path.Join(*flagDir, "test-dashboard-1.db.json"))
+	err = os.Remove(path.Join(*flagDir, "test-dashboard-2.db.json"))
+	err = os.Remove(path.Join(*flagDir, "test-dashboard-3.db.json"))
+	err = os.Remove(*flagDir)
+
+	if err != nil {
+		t.Errorf("Unable to clean up output file %s", err)
+	}
 
 
 }
 
 //TODO: Create multiple tests which test things like sending multiple files, etc.
 func TestBackupDatasources(t *testing.T) {
-
-	//flagServerURL = flag.String("url", "", "URL of Grafana server")
 	*flagServerURL = "http://noserver.nodomain.com:3123"
-	//flagServerKey = flag.String("key", "", "API key of Grafana server")
 	*flagServerKey = "thisisnotreallyanapikey"
-	//flagTimeout   = flag.Duration("timeout", 6*time.Minute, "read flagTimeout for interacting with Grafana in seconds")
-
-	//// Dashboard matching flags.
-	//flagTags       = flag.String("tag", "", "dashboard should match all these tags")
-	//flagBoardTitle = flag.String("title", "", "dashboard title should match name")
-	//flagStarred    = flag.Bool("starred", false, "only match starred dashboards")
-
-	//// Common flags.
-	//flagApplyFor = flag.String("apply-for", "auto", `apply operation only for some kind of objects, available values are "auto", "all", "dashboards", "datasources", "users"`)
 	*flagApplyFor = "datasources"
-	//flagForce    = flag.Bool("force", false, "force overwrite of existing objects")
-	//flagVerbose  = flag.Bool("verbose", false, "verbose output")
-	//flagDir      = flag.String("dir", "backup", "A directory to write backup files to or read them from.")
-	*flagDir      = "/var/tmp/testOutputDir"
+	*flagDir      = "/var/tmp/testDSOutDir"
 
 	argCommand = "backup"
-	// These were used in the test restore datasources
-	//argPath = "testdata/prometheus-test.ds.1.json"
-	//argPath = "testdata/*.1.json"
-	//argPath = "testdata/promartheus-test.ds.1.json"
 
 	// Some variables to track the results of the test
 
-	// Check the accept header.
+	// Accept header.
 	acceptCorrect    := false
-	// Check the content type.
-	cTypeCorrect    := false
+	// Content type header.
+	cTypeCorrect     := false
 	// Track how many times the API was called.
 	numRequests      := 0
 	// Were any requests made to other URIs?
@@ -287,7 +274,6 @@ func TestBackupDatasources(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	//TODO: Break this up into multiple functions so that the NoResponder doesn't cause us to fail Accept Header, body, etc.
 	// Create a responder which will respond with valid JSON and check what was posted to us for validity.
 	httpmock.RegisterResponder("GET", *flagServerURL + "/api/datasources",
 		func(req *http.Request) (*http.Response, error) {
@@ -399,7 +385,7 @@ func TestBackupDatasources(t *testing.T) {
 	//TODO: Confirm that they are correct instead of just confirming that they exist.
 
 	//name := "FileOrDir"
-	fi, err := os.Stat("/var/tmp/testOutputDir/")
+	fi, err := os.Stat(*flagDir)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -409,19 +395,19 @@ func TestBackupDatasources(t *testing.T) {
 		t.Error("Output directory does not exist or is not a directory.")
 	}
 
-	if _, err := os.Stat("/var/tmp/testOutputDir/prometheus-test.ds.1.json"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(*flagDir, "prometheus-test.ds.1.json")); os.IsNotExist(err) {
 		t.Error("prometheus-test output file does not exist.")
 	}
 
-	if _, err := os.Stat("/var/tmp/testOutputDir/promt2local.ds.1.json"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(*flagDir, "promt2local.ds.1.json")); os.IsNotExist(err) {
 		t.Error("prom2local file does not exist.")
 	}
 
 	// Cleanup the output files. Clean up each file and directory explicitly so that we don't accidentally rm -rf something important.
 
-	err = os.Remove("/var/tmp/testOutputDir/promt2local.ds.1.json")
-	err = os.Remove("/var/tmp/testOutputDir/prometheus-test.ds.1.json")
-	err = os.Remove("/var/tmp/testOutputDir")
+	err = os.Remove(path.Join(*flagDir, "promt2local.ds.1.json"))
+	err = os.Remove(path.Join(*flagDir, "prometheus-test.ds.1.json"))
+	err = os.Remove(*flagDir)
 
 	if err != nil {
 		t.Errorf("Unable to clean up output file %s", err)
