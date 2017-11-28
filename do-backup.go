@@ -168,7 +168,7 @@ func extractDatasources(cmd *command, datasources map[string]bool, board sdk.Boa
 			if panel.Datasource != nil {
 				datasources[*panel.Datasource] = true
 				if cmd.verbose {
-					fmt.Printf("Found Datasource %s in dashboard %s: Adding to backup list.", slug.Make(*panel.Datasource), board.Title)
+					fmt.Printf("Found Datasource [%s] in dashboard [%s]: Adding to backup list.\n", slug.Make(*panel.Datasource), board.Title)
 				}
 			}
 		}
