@@ -77,7 +77,7 @@ func backupDashboards(cmd *command) {
 				if err = json.Unmarshal(rawBoard, &board); err != nil {
 					fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s parsing %s\n", err, meta.Slug))
 				} else {
-					extractDatasources(datasources, board)
+					extractDatasources(cmd, datasources, board)
 				}
 			}
 			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
@@ -162,12 +162,14 @@ func backupDatasources(cmd *command, datasources map[string]bool) {
 	}
 }
 
-func extractDatasources(datasources map[string]bool, board sdk.Board) {
+func extractDatasources(cmd *command, datasources map[string]bool, board sdk.Board) {
 	for _, row := range board.Rows {
 		for _, panel := range row.Panels {
 			if panel.Datasource != nil {
 				datasources[*panel.Datasource] = true
-				fmt.Println(slug.Make(*panel.Datasource))
+				if cmd.verbose {
+					fmt.Printf("Found Datasource %s in dashboard %s: Adding to backup list.", slug.Make(*panel.Datasource), board.Title)
+				}
 			}
 		}
 	}
