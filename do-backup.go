@@ -20,9 +20,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/gosimple/slug"
 	"github.com/grafana-tools/sdk"
@@ -64,6 +66,10 @@ func backupDashboards(cmd *command) {
 	if cmd.verbose {
 		fmt.Printf("Found %d dashboards that matched the conditions.\n", len(boardLinks))
 	}
+
+	// TODO: If this directory already exists prompt to overwrite (unless --force)
+	VerifyOrCreateDir(*flagDir)
+
 	for _, link := range boardLinks {
 		select {
 		case <-cancel:
@@ -80,7 +86,7 @@ func backupDashboards(cmd *command) {
 					extractDatasources(cmd, datasources, board)
 				}
 			}
-			var fname = fmt.Sprintf("%s.db.json", meta.Slug)
+			var fname = fmt.Sprintf(path.Join(*flagDir, "%s.db.json"), meta.Slug)
 			if err = ioutil.WriteFile(fname, rawBoard, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, meta.Slug))
 				continue
@@ -105,13 +111,16 @@ func backupUsers(cmd *command) {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s\n", err))
 		return
 	}
+
+	VerifyOrCreateDir(*flagDir)
+
 	for _, user := range allUsers {
 		select {
 		case <-cancel:
 			exitBySignal()
 		default:
 			rawUser, _ = json.Marshal(user)
-			var fname = fmt.Sprintf("%s.user.%d.json", slug.Make(user.Login), user.OrgID)
+			var fname = fmt.Sprintf(path.Join(*flagDir, "%s.user.%d.json"), slug.Make(user.Login), user.OrgID)
 			if err = ioutil.WriteFile(fname, rawUser, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("error %s on writing %s\n", err, fname))
 				continue
@@ -129,13 +138,18 @@ func backupDatasources(cmd *command, datasources map[string]bool) {
 		rawDs          []byte
 		err            error
 	)
+
 	if allDatasources, err = cmd.grafana.GetAllDatasources(); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return
 	}
+
 	if cmd.verbose {
 		fmt.Printf("Found %d datasources.\n", len(allDatasources))
 	}
+
+	VerifyOrCreateDir(*flagDir)
+
 	for _, ds := range allDatasources {
 		select {
 		case <-cancel:
@@ -146,15 +160,19 @@ func backupDatasources(cmd *command, datasources map[string]bool) {
 					continue
 				}
 			}
+
 			if rawDs, err = json.Marshal(ds); err != nil {
 				fmt.Fprintf(os.Stderr, "datasource marshal error %s\n", err)
 				continue
 			}
-			var fname = fmt.Sprintf("%s.ds.%d.json", slug.Make(ds.Name), ds.OrgID)
+
+			var fname = fmt.Sprintf(path.Join(*flagDir, "%s.ds.%d.json"), slug.Make(ds.Name), ds.OrgID)
+
 			if err = ioutil.WriteFile(fname, rawDs, os.FileMode(int(0666))); err != nil {
 				fmt.Fprintf(os.Stderr, fmt.Sprintf("%s for %s\n", err, ds.Name))
 				continue
 			}
+
 			if cmd.verbose {
 				fmt.Printf("%s written into %s", ds.Name, fname)
 			}
@@ -173,4 +191,23 @@ func extractDatasources(cmd *command, datasources map[string]bool, board sdk.Boa
 			}
 		}
 	}
+}
+
+// Checks to see if a directory exists. If not creates it along with any parent directories. Returns an error if the
+// file exists but is not a directory or if it is unable to create the directory.
+func VerifyOrCreateDir(directory string) (error) {
+	stat, err := os.Stat(directory)
+	if err == nil {
+		if !stat.IsDir() {
+			return errors.New("Specified path is not a directory!")
+		}
+		return nil
+	}
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(directory, 0755)
+		return err
+	}
+
+
+	return err
 }
